@@ -9,8 +9,8 @@ Ensures 100% of accessible funds are backed at all times
 import "./IERC20.sol";
 import "./SafeMath.sol";
 import "./EnumerableSet.sol";
-import "./UniswapV2Library.sol";
 import "./IUniswapV2Factory.sol";
+import "./IUniswapV2Router02.sol";
 import "./TokensRecoverable.sol";
 import "./IFloorCalculator.sol";
 
@@ -24,16 +24,21 @@ contract ThreeStableCoinPoolsCalculator is IFloorCalculator, TokensRecoverable
     address immutable rootedElitePair;
     address immutable rootedBasePair;
     address immutable rootedFiatPair;
+    IUniswapV2Router02 immutable uniswapV2Router;
     EnumerableSet.AddressSet ignoredAddresses;
 
-    constructor(IERC20 _rootedToken, IERC20 _eliteToken, IERC20 _baseToken, IERC20 _fiatToken, IUniswapV2Factory _uniswapV2Factory)
+    constructor(IERC20 _rootedToken, IERC20 _eliteToken, IERC20 _baseToken, IERC20 _fiatToken, IUniswapV2Factory _uniswapV2Factory, IUniswapV2Router02 _uniswapV2Router)
     {
         rootedToken = _rootedToken;
         fiatToken = _fiatToken;
+        uniswapV2Router = _uniswapV2Router;
 
-        rootedElitePair = UniswapV2Library.pairFor(address(_uniswapV2Factory), address(_rootedToken), address(_eliteToken));
-        rootedBasePair = UniswapV2Library.pairFor(address(_uniswapV2Factory), address(_rootedToken), address(_baseToken));   
-        rootedFiatPair = UniswapV2Library.pairFor(address(_uniswapV2Factory), address(_rootedToken), address(_fiatToken));
+        address _rootedElitePair = _uniswapV2Factory.getPair(address(_eliteToken), address(_rootedToken));
+        rootedElitePair = _rootedElitePair;
+        address _rootedBasePair = _uniswapV2Factory.getPair(address(_baseToken), address(_rootedToken));
+        rootedBasePair = _rootedBasePair;
+        address _rootedFiatPair = _uniswapV2Factory.getPair(address(_fiatToken), address(_rootedToken));
+        rootedFiatPair = _rootedFiatPair;
     }    
 
     function setIgnoreAddresses(address ignoredAddress, bool add) public ownerOnly()
@@ -78,14 +83,14 @@ contract ThreeStableCoinPoolsCalculator is IFloorCalculator, TokensRecoverable
     {
         uint256 totalRootedInPairs = rootedToken.balanceOf(rootedElitePair).add(rootedToken.balanceOf(rootedBasePair)).add(rootedToken.balanceOf(rootedFiatPair));
         uint256 totalStableInPairs = eliteToken.balanceOf(rootedElitePair).add(baseToken.balanceOf(rootedBasePair)).add(fiatToken.balanceOf(rootedFiatPair).div(1e12));
-        uint256 amountA = rootedToken.totalSupply().sub(totalRootedInPairs).sub(ignoredAddressesTotalBalance());
-        uint256 amountB = UniswapV2Library.quote(amountA, totalRootedInPairs, totalStableInPairs);
+        uint256 rootedCirculatingSupply = rootedToken.totalSupply().sub(totalRootedInPairs).sub(ignoredAddressesTotalBalance());
+        uint256 amountUntilFloor = uniswapV2Router.getAmountOut(rootedCirculatingSupply, totalRootedInPairs, totalStableInPairs);
 
-        uint256 totalExcessInPools = totalStableInPairs.sub(amountB);
-        uint256 currentUnbacked = eliteToken.totalSupply().sub(baseToken.balanceOf(address(eliteToken)));
+        uint256 totalExcessInPools = totalStableInPairs.sub(amountUntilFloor);
+        uint256 previouslySwept = eliteToken.totalSupply().sub(baseToken.balanceOf(address(eliteToken)));
         
-        if (currentUnbacked >= totalExcessInPools) { return 0; }
+        if (previouslySwept >= totalExcessInPools) { return 0; }
 
-        return totalExcessInPools.sub(currentUnbacked);
+        return totalExcessInPools.sub(previouslySwept);
     }
 }
