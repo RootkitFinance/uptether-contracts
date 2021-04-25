@@ -76,12 +76,12 @@ contract ThreeStableCoinPoolsCalculator is IFloorCalculator, TokensRecoverable
 
     function calculateSubFloor(IERC20 baseToken, IERC20 eliteToken) public override view returns (uint256)
     {
-        uint256 rootedBalances = rootedToken.balanceOf(rootedElitePair).add(rootedToken.balanceOf(rootedBasePair)).add(rootedToken.balanceOf(rootedFiatPair));
-        uint256 stableCoinBalances = eliteToken.balanceOf(rootedElitePair).add(baseToken.balanceOf(rootedBasePair)).add(fiatToken.balanceOf(rootedFiatPair));
-        uint256 amountA = rootedToken.totalSupply().sub(rootedBalances).sub(ignoredAddressesTotalBalance());
-        uint256 amountB = UniswapV2Library.quote(amountA, rootedBalances, stableCoinBalances);
+        uint256 totalRootedInPairs = rootedToken.balanceOf(rootedElitePair).add(rootedToken.balanceOf(rootedBasePair)).add(rootedToken.balanceOf(rootedFiatPair));
+        uint256 totalStableInPairs = eliteToken.balanceOf(rootedElitePair).add(baseToken.balanceOf(rootedBasePair)).add(fiatToken.balanceOf(rootedFiatPair).div(1e12));
+        uint256 amountA = rootedToken.totalSupply().sub(totalRootedInPairs).sub(ignoredAddressesTotalBalance());
+        uint256 amountB = UniswapV2Library.quote(amountA, totalRootedInPairs, totalStableInPairs);
 
-        uint256 totalExcessInPools = stableCoinBalances.sub(amountB);
+        uint256 totalExcessInPools = totalStableInPairs.sub(amountB);
         uint256 currentUnbacked = eliteToken.totalSupply().sub(baseToken.balanceOf(address(eliteToken)));
         
         if (currentUnbacked >= totalExcessInPools) { return 0; }
