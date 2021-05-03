@@ -71,7 +71,7 @@ contract LiquidityController is TokensRecoverable, ILiquidityController
         liquidityControllers[controlAddress] = controller;
     }
 
-    function recalibrate(IFloorCalculator _calculator, RootedTransferGate _gate) public ownerOnly()
+    function setCalculatorAndGate(IFloorCalculator _calculator, RootedTransferGate _gate) public ownerOnly()
     {
         calculator = _calculator;
         gate = _gate;
