@@ -9,4 +9,9 @@ contract EliteToken is ERC31337
     constructor (IERC20 _wrappedToken) ERC31337(_wrappedToken, "eliteTether", "eTether")
     {
     }
+
+    function burn(uint256 amount) public
+    {
+        _burn(msg.sender, amount);
+    }
 }

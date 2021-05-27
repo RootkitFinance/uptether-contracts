@@ -123,7 +123,7 @@ contract RootedRouter is TokensRecoverable
         baseToken.safeTransfer(to, baseToken.balanceOf(address(this)));
     }
 
-     function swapEliteForRooted(
+    function swapEliteForRooted(
         uint amountIn,
         uint amountOutMin,
         address to,

@@ -7,7 +7,7 @@ contract TetherTest is ERC20("Tether", "USDT")
 { 
     constructor()
     {
-         decimals = 6;
+        decimals = 6;
         _mint(msg.sender, 100 ** decimals);       
     }
 }

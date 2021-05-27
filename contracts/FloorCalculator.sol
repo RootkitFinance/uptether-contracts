@@ -13,7 +13,7 @@ import "./IUniswapV2Factory.sol";
 import "./TokensRecoverable.sol";
 import "./EnumerableSet.sol";
 
-contract EliteFloorCalculator is IFloorCalculator, TokensRecoverable
+contract FloorCalculator is IFloorCalculator, TokensRecoverable
 {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
