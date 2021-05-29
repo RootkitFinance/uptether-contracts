@@ -134,12 +134,12 @@ contract RootedRouter is TokensRecoverable
         uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, amountOutMin, eliteToRootedPath(), to, deadline);
     }
 
-    function buyRooted(uint amountIn, uint amountOutMin, address to)
+    function buyRooted(uint amountIn, uint amountOutMin, address to) public
     {
         return swapEliteForRooted(amountIn, amountOutMin, to, block.timestamp);
     }
 
-    function sellRooted(uint amountIn, uint amountOutMin, address to)
+    function sellRooted(uint amountIn, uint amountOutMin, address to) public
     {
         return swapRootedForElite(amountIn, amountOutMin, to, block.timestamp);
     }
