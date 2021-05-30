@@ -6,7 +6,7 @@ import "./IERC20.sol";
 import "./ERC20.sol";
 import "./TokensRecoverable.sol";
 
-contract StakingToken is ERC20("upBNB Staking", "xUpBNB"), TokensRecoverable
+contract StakingToken is ERC20("upUSDT Staking", "xUpUSDT"), TokensRecoverable
 {
     using SafeMath for uint256;
     IERC20 public immutable rootedToken;
