@@ -18,7 +18,7 @@ for efficent access to market features
 
 import "./LiquidityLockedERC20.sol";
 
-contract RootedToken is LiquidityLockedERC20("upTether", "upUSDT")
+contract RootedToken is LiquidityLockedERC20("upTether.finance", "upUSDT")
 {
     address public minter;
 
@@ -31,6 +31,6 @@ contract RootedToken is LiquidityLockedERC20("upTether", "upUSDT")
     {
         require(msg.sender == minter, "Not a minter");
         require(this.totalSupply() == 0, "Already minted");
-        _mint(msg.sender, amount * 1e12); // tether!!!
+        _mint(msg.sender, amount);
     }
 }
