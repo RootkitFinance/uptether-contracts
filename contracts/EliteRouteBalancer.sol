@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: U-U-U-UPPPPP!!!
 pragma solidity ^0.7.4;
 
+import "./SafeMath.sol";
+import "./SafeERC20.sol";
 import "./IERC20.sol";
 import "./IERC31337.sol";
 import "./TokensRecoverable.sol";
@@ -10,6 +12,7 @@ import "./IUniswapV2Router02.sol";
 contract EliteRouteBalancer is TokensRecoverable
 {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     IERC20 public immutable tether;
     IERC31337 public immutable elite;
@@ -28,6 +31,7 @@ contract EliteRouteBalancer is TokensRecoverable
 
         _tether.approve(address(_uniswapV2Router), uint256(-1));
         _elite.approve(address(_uniswapV2Router), uint256(-1));
+        _tether.safeApprove(address(_elite), uint256(-1));
     }   
     
     modifier arbitrageurOnly()
