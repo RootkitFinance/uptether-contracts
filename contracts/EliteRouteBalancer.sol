@@ -19,7 +19,7 @@ contract EliteRouteBalancer is TokensRecoverable
     IERC20 public immutable pair;
     IUniswapV2Router02 public immutable uniswapV2Router;
 
-    mapping (address => bool) public arbitrageurs;
+    mapping (address => bool) public balancers;
 
     constructor (IERC20 _tether, IERC31337 _elite, IUniswapV2Router02 _uniswapV2Router)
     {
@@ -32,21 +32,17 @@ contract EliteRouteBalancer is TokensRecoverable
         _tether.approve(address(_uniswapV2Router), uint256(-1));
         _elite.approve(address(_uniswapV2Router), uint256(-1));
         _tether.safeApprove(address(_elite), uint256(-1));
-    }   
-    
-    modifier arbitrageurOnly()
-    {
-        require(arbitrageurs[msg.sender], "Not an arbitrageur");
-        _;
     }
 
-    function setArbitrageur(address arbitrageur, bool allow) public ownerOnly()
+    function setBalancer(address balancer, bool allow) public ownerOnly()
     {
-        arbitrageurs[arbitrageur] = allow;
+        balancers[balancer] = allow;
     }
 
-    function balanceEliteRoute() public arbitrageurOnly() 
+    function balanceEliteRoute() public
     {
+        require(balancers[msg.sender], "Not a balancer");
+
         uint256 eliteInPair = elite.balanceOf(address(pair));
         uint256 tetherInPair = tether.balanceOf(address(pair));
 
