@@ -5,12 +5,11 @@ import "./IERC31337.sol";
 import "./TokensRecoverable.sol";
 import "./IUniswapV2Router02.sol";
 
-
-contract SSBDBalancer is  TokensRecoverable
+contract SSBDBalancer is TokensRecoverable
 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    IERC20 public immutable routeLpToken;
+    IERC20 public immutable SSBDLpToken;
     IERC20 immutable base;
     IERC31337 immutable elite;
     IUniswapV2Router02 immutable uniswapV2Router;
@@ -20,9 +19,9 @@ contract SSBDBalancer is  TokensRecoverable
     // This contract keeps a balance of elite token and the bringBalance function 
     // should be called by a bot after every swap event in the SSBD pool
 
-    constructor(IERC20 _routeLpToken, IERC31337 _elite, IERC20 _base, IUniswapV2Router02 _uniswapV2Router, address _SSBDStaking) 
+    constructor(IERC20 _SSBDLpToken, IERC31337 _elite, IERC20 _base, IUniswapV2Router02 _uniswapV2Router, address _SSBDStaking) 
     {
-        routeLpToken = _routeLpToken;
+        SSBDLpToken = _SSBDLpToken;
         elite = _elite;
         base = _base;
         uniswapV2Router = _uniswapV2Router;
@@ -31,8 +30,7 @@ contract SSBDBalancer is  TokensRecoverable
         _base.safeApprove(address(_uniswapV2Router), uint256(-1));
         _base.safeApprove(address(_elite), uint256(-1));
         _elite.approve(address(_uniswapV2Router), uint256(-1));
-        _routeLpToken.approve(address(_uniswapV2Router), uint256(-1));
-        
+        _SSBDLpToken.approve(address(_uniswapV2Router), uint256(-1));        
     }
 
     function setProfitShare(uint256 _compoundAmount) public ownerOnly(){
@@ -42,8 +40,8 @@ contract SSBDBalancer is  TokensRecoverable
 
     function bringBalance() public {
         uint256 startingBalance = elite.balanceOf(address(this));
-        uint256 amountA = base.balanceOf(address(routeLpToken));
-        uint256 amountB = elite.balanceOf(address(routeLpToken));
+        uint256 amountA = base.balanceOf(address(SSBDLpToken));
+        uint256 amountB = elite.balanceOf(address(SSBDLpToken));
         uint256 smallerAmount = amountA < amountB ? amountA : amountB;
         uint256 balanceAmount = (amountA + amountB).div(2).sub(smallerAmount);
         balanceAmount = balanceAmount > startingBalance ? startingBalance : balanceAmount;
