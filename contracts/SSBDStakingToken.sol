@@ -6,7 +6,6 @@ import "./SafeERC20.sol";
 import "./IERC31337.sol";
 import "./TokensRecoverable.sol";
 import "./IUniswapV2Router02.sol";
-import "./RootedTransferGate.sol";
 
 // SSBD Token - Same Same But Different Token
 // LP token of any token + its elite counterpart

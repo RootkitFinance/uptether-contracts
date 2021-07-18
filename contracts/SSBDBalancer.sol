@@ -55,7 +55,7 @@ contract SSBDBalancer is TokensRecoverable
         elite.depositTokens(base.balanceOf(address(this)));
         uint256 finalBalance = elite.balanceOf(address(this));
         require (finalBalance > startingBalance);
-        finalBalance = (finalBalance - startingBalance) * 100 / compoundAmount; // % of profit to SSBD staking for compounding.
+        finalBalance = (finalBalance - startingBalance) * compoundAmount / 100; // % of profit to SSBD staking for compounding.
         elite.transfer(SSBDStaking, finalBalance);
     }
 
