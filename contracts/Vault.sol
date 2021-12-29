@@ -17,36 +17,35 @@ contract Vault is TokensRecoverable, IVault
     using SafeMath for uint256;
     using SafeERC20 for IERC20; 
 
-    IUniswapV2Router02 immutable uniswapV2Router;
-    IUniswapV2Factory immutable uniswapV2Factory;
+    IUniswapV2Router02 immutable uniswapRouter;
+    IUniswapV2Factory immutable uniswapFactory;
     IERC20 immutable rooted;
     IERC20 immutable base;
     IERC31337 immutable elite;
-    IERC20 immutable rootedEliteLP;
+    IERC20 rootedEliteLP;
     IFloorCalculator public calculator;
     RootedTransferGate public gate;
     mapping(address => bool) public seniorVaultManagers;
 
-    constructor(IUniswapV2Router02 _uniswapV2Router, IERC20 _base, IERC20 _rooted, IERC31337 _elite, IFloorCalculator _calculator, RootedTransferGate _gate) 
-    {
-        uniswapV2Router = _uniswapV2Router;
+    constructor(IERC20 _base, IERC31337 _elite, IERC20 _rooted, IFloorCalculator _calculator, RootedTransferGate _gate, IUniswapV2Router02 _uniswapRouter) 
+    {        
         base = _base;
         elite = _elite;
         rooted = _rooted;
         calculator = _calculator;
         gate = _gate;
-
-        IUniswapV2Factory _uniswapV2Factory = IUniswapV2Factory(_uniswapV2Router.factory());
-        uniswapV2Factory = _uniswapV2Factory;        
+        uniswapRouter = _uniswapRouter;
+        uniswapFactory = IUniswapV2Factory(_uniswapRouter.factory());
         
-        _base.safeApprove(address(_uniswapV2Router), uint256(-1));
-        _base.safeApprove(address(_elite), uint256(-1));
-        _rooted.approve(address(_uniswapV2Router), uint256(-1));
-        _elite.approve(address(_uniswapV2Router), uint256(-1));
-       
-        IERC20 _rootedEliteLP = IERC20(_uniswapV2Factory.getPair(address(_elite), address(_rooted)));
-        _rootedEliteLP.approve(address(_uniswapV2Router), uint256(-1));
-        rootedEliteLP = _rootedEliteLP;       
+        _base.approve(address(_elite), uint256(-1));
+        _base.approve(address(_uniswapRouter), uint256(-1));
+        _rooted.approve(address(_uniswapRouter), uint256(-1));
+        _elite.approve(address(_uniswapRouter), uint256(-1));        
+    }
+
+    function setupPool() public ownerOnly() {       
+        rootedEliteLP = IERC20(uniswapFactory.getPair(address(elite), address(rooted)));
+        rootedEliteLP.approve(address(uniswapRouter), uint256(-1));
     }
 
     modifier seniorVaultManagerOnly()
@@ -67,20 +66,20 @@ contract Vault is TokensRecoverable, IVault
         gate = _gate;
     }
 
-    // Removes liquidity, buys from either pool, sets a temporary dump tax
-    function removeBuyAndTax(uint256 lpAmount, uint16 tax, uint256 time) public override seniorVaultManagerOnly()
+      // Removes liquidity, buys from either pool, sets a temporary dump tax
+    function removeBuyAndTax(uint256 amount, uint256 minAmountOut, uint16 tax, uint256 time) public override seniorVaultManagerOnly()
     {
         gate.setUnrestricted(true);
-        uint256 amount = removeLiq(lpAmount);
-        buyRootedToken(amount);
+        amount = removeLiq(amount);
+        buyRootedToken(amount, minAmountOut);
         gate.setDumpTax(tax, time);
         gate.setUnrestricted(false);
     }
 
     // Uses value in the controller to buy
-    function buyAndTax(uint256 amountToSpend, uint16 tax, uint256 time) public override seniorVaultManagerOnly()
+    function buyAndTax(uint256 amountToSpend, uint256 minAmountOut, uint16 tax, uint256 time) public override seniorVaultManagerOnly()
     {
-        buyRootedToken(amountToSpend);
+        buyRootedToken(amountToSpend, minAmountOut);
         gate.setDumpTax(tax, time);
     }
 
@@ -103,7 +102,7 @@ contract Vault is TokensRecoverable, IVault
     function addLiquidity(uint256 eliteAmount) public override seniorVaultManagerOnly() 
     {
         gate.setUnrestricted(true);
-        uniswapV2Router.addLiquidity(address(elite), address(rooted), eliteAmount, rooted.balanceOf(address(this)), 0, 0, address(this), block.timestamp);
+        uniswapRouter.addLiquidity(address(elite), address(rooted), eliteAmount, rooted.balanceOf(address(this)), 0, 0, address(this), block.timestamp);
         gate.setUnrestricted(false);
     }
 
@@ -114,31 +113,31 @@ contract Vault is TokensRecoverable, IVault
         gate.setUnrestricted(false);
     }
 
-    function buyRooted(uint256 amountToSpend) public override seniorVaultManagerOnly()
+    function buyRooted(uint256 amountToSpend, uint256 minAmountOut) public override seniorVaultManagerOnly()
     {
-        buyRootedToken(amountToSpend);
+        buyRootedToken(amountToSpend, minAmountOut);
     }
 
-    function sellRooted(uint256 amountToSpend) public override seniorVaultManagerOnly()
+    function sellRooted(uint256 amountToSpend, uint256 minAmountOut) public override seniorVaultManagerOnly()
     {
-        sellRootedToken(amountToSpend);
+        sellRootedToken(amountToSpend, minAmountOut);
     }
 
     function removeLiq(uint256 lpAmount) internal returns (uint256)
     {
-        (uint256 tokens, ) = uniswapV2Router.removeLiquidity(address(elite), address(rooted), lpAmount, 0, 0, address(this), block.timestamp);
+        (uint256 tokens, ) = uniswapRouter.removeLiquidity(address(elite), address(rooted), lpAmount, 0, 0, address(this), block.timestamp);
         return tokens;
     }
 
-    function buyRootedToken(uint256 amountToSpend) internal returns (uint256)
+    function buyRootedToken(uint256 amountToSpend, uint256 minAmountOut) internal returns (uint256)
     {
-        uint256[] memory amounts = uniswapV2Router.swapExactTokensForTokens(amountToSpend, 0, buyPath(), address(this), block.timestamp);
+        uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(amountToSpend, minAmountOut, buyPath(), address(this), block.timestamp);
         return amounts[1];
     }
 
-    function sellRootedToken(uint256 amountToSpend) internal returns (uint256)
+    function sellRootedToken(uint256 amountToSpend, uint256 minAmountOut) internal returns (uint256)
     {
-        uint256[] memory amounts = uniswapV2Router.swapExactTokensForTokens(amountToSpend, 0, sellPath(), address(this), block.timestamp);
+        uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(amountToSpend, minAmountOut, sellPath(), address(this), block.timestamp);
         return amounts[1];
     }
 
