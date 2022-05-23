@@ -1,9 +1,9 @@
-// 1. Add newOwner (multisig) address
+// 1. Double check addresses
 // 2. In the REMIX compile IOwned
 // 3. Right click on the script name and hit "Run" to execute
 (async () => {
 	try {
-		const newOwner = "";
+		const newOwner = "0x8295aDa05d34E9205986aE4f69Bc0615bdaaa027";
 		const calculator = "0xdc436261C356E136b1671442d0bD0Ae183a6d77D";
 		const elite = "0xbFDF833E65Bd8B27c84fbE55DD17F7648C532168";
 		const rooted = "0xCb5f72d37685C3D5aD0bB5F982443BC8FcdF570E"
